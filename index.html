@@ -449,20 +449,262 @@
   @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   @keyframes streakPop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
   .streak-pop { animation: streakPop 0.3s ease; }
+
+  /* AUTH SCREEN */
+  .auth-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 36px; text-align: center;
+  }
+  .auth-title {
+    font-family: 'Unbounded', sans-serif; font-size: 1.8rem; font-weight: 900;
+    background: linear-gradient(135deg, #a855f7, #60a5fa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  .auth-sub { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+  .auth-tabs { display: flex; gap: 6px; background: var(--bg); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+  .auth-tab {
+    flex: 1; padding: 9px; border-radius: 9px; border: none; background: transparent;
+    color: var(--muted); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .auth-field { position: relative; margin-bottom: 10px; }
+  .auth-field-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
+  .auth-input {
+    width: 100%; background: var(--bg); border: 2px solid var(--border); color: var(--text);
+    padding: 12px 14px 12px 38px; border-radius: 12px; font-family: 'Inter', sans-serif;
+    font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .auth-input:focus { border-color: var(--accent2); }
+  .auth-input::placeholder { color: var(--muted); }
+  .auth-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; padding: 14px; border-radius: 999px;
+    font-family: 'Unbounded', sans-serif; font-size: 12px; cursor: pointer;
+    transition: all 0.2s; width: 100%; margin-top: 6px; letter-spacing: 0.04em;
+  }
+  .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+  .auth-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+  .auth-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--muted); font-size: 11px; }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .auth-google-btn {
+    width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border);
+    background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .auth-google-btn:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .auth-error { color: var(--wrong); font-size: 11px; margin-top: 8px; min-height: 16px; }
+
+  /* ACCOUNT BAR on home */
+  .account-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 10px 14px; margin-bottom: 16px;
+    transition: all 0.2s;
+  }
+  .account-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Unbounded', sans-serif; font-size: 13px; font-weight: 900; color: #fff; flex-shrink: 0;
+  }
+  .account-info { flex: 1; text-align: left; }
+  .account-name { font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 700; }
+  .account-email { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .account-signout {
+    font-size: 11px; color: var(--muted); padding: 4px 8px; border-radius: 7px;
+    border: 1px solid var(--border); background: none; cursor: pointer; transition: all 0.15s;
+  }
+  .account-signout:hover { color: var(--wrong); border-color: var(--wrong); }
+
+  /* LEADERBOARD live badge */
+  .lb-live-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4);
+    color: var(--correct); font-size: 9px; padding: 2px 7px; border-radius: 999px;
+    font-weight: 600; letter-spacing: 0.06em; margin-left: 8px;
+  }
+  .lb-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--correct); animation: lbpulse 1.5s infinite; }
+  @keyframes lbpulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
+
+<!-- Firebase SDKs (loaded as modules via CDN) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           signOut, onAuthStateChanged, updateProfile,
+           GoogleAuthProvider, signInWithPopup }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, updateDoc,
+           collection, addDoc, query, orderBy, limit, getDocs, where, deleteDoc }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAEIAJGm4dfg95UINuZ1INsCTPiXRBu1oU",
+    authDomain: "quiz-game-d0663.firebaseapp.com",
+    projectId: "quiz-game-d0663",
+    storageBucket: "quiz-game-d0663.firebasestorage.app",
+    messagingSenderId: "744260733157",
+    appId: "1:744260733157:web:972ac484a6aaaafaf22c0c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  // ── Expose Firebase helpers to global scope so main script can call them ──
+  window._fb = {
+    // AUTH
+    async signUp(email, password, displayName) {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName });
+      await window._fb.createUserDoc(cred.user, displayName);
+      return cred.user;
+    },
+    async signIn(email, password) {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      return cred.user;
+    },
+    async signInGoogle() {
+      const cred = await signInWithPopup(auth, googleProvider);
+      // Create user doc if first time
+      const ref = doc(db, 'users', cred.user.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await window._fb.createUserDoc(cred.user, cred.user.displayName || 'Player');
+      }
+      return cred.user;
+    },
+    async signOut() { await signOut(auth); },
+    onAuthChange(cb) { return onAuthStateChanged(auth, cb); },
+
+    // USER PROFILE
+    async createUserDoc(user, displayName) {
+      await setDoc(doc(db, 'users', user.uid), {
+        displayName,
+        email: user.email,
+        xp: 0, level: 1, achievements: [], catsPlayed: [],
+        createdAt: Date.now()
+      });
+    },
+    async getUserDoc(uid) {
+      const snap = await getDoc(doc(db, 'users', uid));
+      return snap.exists() ? snap.data() : null;
+    },
+    async updateUserDoc(uid, data) {
+      await updateDoc(doc(db, 'users', uid), data);
+    },
+
+    // LEADERBOARD
+    async addScore(entry) {
+      await addDoc(collection(db, 'leaderboard'), entry);
+    },
+    async getLeaderboard(categoryFilter) {
+      let q;
+      if (categoryFilter && categoryFilter !== 'all') {
+        q = query(collection(db, 'leaderboard'),
+          where('category', '==', categoryFilter),
+          orderBy('score', 'desc'), limit(50));
+      } else {
+        q = query(collection(db, 'leaderboard'),
+          orderBy('score', 'desc'), limit(50));
+      }
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    async clearLeaderboard() {
+      const snap = await getDocs(collection(db, 'leaderboard'));
+      const deletes = snap.docs.map(d => deleteDoc(doc(db, 'leaderboard', d.id)));
+      await Promise.all(deletes);
+    },
+    currentUser() { return auth.currentUser; }
+  };
+
+  // ── Watch auth state — drive the UI ──
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Signed in — load their profile from Firestore
+      try {
+        let profile = await window._fb.getUserDoc(user.uid);
+        if (!profile) {
+          // Edge case: auth exists but no Firestore doc yet
+          await window._fb.createUserDoc(user, user.displayName || user.email.split('@')[0]);
+          profile = await window._fb.getUserDoc(user.uid);
+        }
+        window._currentUser = { uid: user.uid, email: user.email,
+          displayName: user.displayName || profile.displayName, profile };
+        if (typeof window.onUserSignedIn === 'function') window.onUserSignedIn(window._currentUser);
+      } catch(e) {
+        console.error('Profile load error:', e);
+        if (typeof window.onUserSignedIn === 'function') window.onUserSignedIn({ uid: user.uid, email: user.email, displayName: user.displayName || 'Player', profile: null });
+      }
+    } else {
+      window._currentUser = null;
+      if (typeof window.onUserSignedOut === 'function') window.onUserSignedOut();
+    }
+  });
+</script>
+
 </head>
 <body>
 
 <canvas id="confettiCanvas"></canvas>
 
+<!-- AUTH SCREEN -->
+<div class="screen active" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-title">QUIZ!</div>
+    <div class="auth-sub">Sign in to save your scores & compete globally</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authForm">
+      <div id="signupNameField" style="display:none">
+        <div class="auth-field">
+          <span class="auth-field-icon">😊</span>
+          <input class="auth-input" id="authDisplayName" type="text" placeholder="Display name" maxlength="20" />
+        </div>
+      </div>
+      <div class="auth-field">
+        <span class="auth-field-icon">✉️</span>
+        <input class="auth-input" id="authEmail" type="email" placeholder="Email address" />
+      </div>
+      <div class="auth-field">
+        <span class="auth-field-icon">🔒</span>
+        <input class="auth-input" id="authPassword" type="password" placeholder="Password" />
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <button class="auth-btn" id="authSubmitBtn" onclick="submitAuth()">Sign In</button>
+      <div class="auth-divider">or</div>
+      <button class="auth-google-btn" onclick="signInGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- HOME -->
-<div class="screen active" id="homeScreen">
+<div class="screen" id="homeScreen">
   <div class="home-card">
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;">
       <div class="game-title" style="margin-bottom:0">QUIZ!</div>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
     </div>
     <div class="game-sub">Test your knowledge</div>
+
+    <div class="account-bar" id="accountBar">
+      <div class="account-avatar" id="accountAvatar">?</div>
+      <div class="account-info">
+        <div class="account-name" id="accountName">Loading...</div>
+        <div class="account-email" id="accountEmail"></div>
+      </div>
+      <button class="account-signout" onclick="doSignOut()">Sign out</button>
+    </div>
 
     <div class="xp-bar-wrap">
       <div class="xp-bar-top">
@@ -588,7 +830,7 @@
 <!-- LEADERBOARD -->
 <div class="screen" id="leaderboardScreen">
   <div class="leaderboard-card">
-    <div class="lb-header"><div class="lb-title">🏆 Leaderboard</div></div>
+    <div class="lb-header"><div class="lb-title">🏆 Leaderboard <span class="lb-live-badge"><span class="lb-live-dot"></span>LIVE</span></div></div>
     <div class="lb-filter" id="lbFilter"></div>
     <div class="lb-list" id="lbList"></div>
     <div class="lb-actions">
@@ -2015,6 +2257,7 @@ function showResults() {
   const dailyBonus = isDaily ? 50 : 0;
   const totalXP = baseXP + diffBonus + streakBonus + dailyBonus;
   const leveled = addXP(totalXP);
+  syncProfileToCloud(); // sync XP & achievements to Firestore
 
   const xpEl = document.getElementById('xpEarned');
   xpEl.innerHTML = `
@@ -2218,19 +2461,17 @@ async function startDaily() {
 // ═══════════════════════════════════════
 function showNameEntry(emoji) {
   document.getElementById('overlayEmoji').textContent = emoji;
-  document.getElementById('playerNameInput').value = '';
+  // Pre-fill with account display name if logged in
+  const prefill = window._currentUser ? (window._currentUser.displayName || '') : '';
+  document.getElementById('playerNameInput').value = prefill;
   document.getElementById('nameOverlay').classList.add('active');
   setTimeout(() => document.getElementById('playerNameInput').focus(), 100);
 }
 
-function saveScore() {
+async function saveScore() {
   const name = document.getElementById('playerNameInput').value.trim() || 'Anonymous';
   if (pendingScore) {
-    const lb = getLeaderboard();
-    lb.push({ name, ...pendingScore });
-    lb.sort((a,b) => (b.score/b.total)-(a.score/a.total)||b.score-a.score||b.date-a.date);
-    if (lb.length > 50) lb.length = 50;
-    saveLeaderboard(lb);
+    await saveScoreToCloud(name, pendingScore);
     pendingScore = null;
   }
   document.getElementById('nameOverlay').classList.remove('active');
@@ -2585,7 +2826,221 @@ function haptic(type) {
 
 // INIT
 loadTheme();
-refreshHome();
+
+// ═══════════════════════════════════════
+// FIREBASE AUTH & FIRESTORE INTEGRATION
+// ═══════════════════════════════════════
+
+// Called by Firebase module when user signs in
+window.onUserSignedIn = async function(user) {
+  window._currentUser = user;
+  // Sync Firestore profile into local playerData
+  if (user.profile) {
+    const d = {
+      xp: user.profile.xp || 0,
+      level: user.profile.level || 1,
+      achievements: user.profile.achievements || [],
+      catsPlayed: user.profile.catsPlayed || []
+    };
+    savePlayerData(d);
+  }
+  updateAccountBar(user);
+  // If on auth screen, go home
+  if (document.getElementById('authScreen').classList.contains('active')) {
+    showScreen('homeScreen');
+    refreshHome();
+  } else {
+    refreshHome();
+  }
+};
+
+// Called by Firebase module when user signs out
+window.onUserSignedOut = function() {
+  window._currentUser = null;
+  showScreen('authScreen');
+};
+
+function updateAccountBar(user) {
+  if (!user) return;
+  const name = user.displayName || user.email;
+  document.getElementById('accountName').textContent = name;
+  document.getElementById('accountEmail').textContent = user.email;
+  document.getElementById('accountAvatar').textContent = name.charAt(0).toUpperCase();
+}
+
+// AUTH SCREEN LOGIC
+let authMode = 'login';
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabSignup').classList.toggle('active', mode === 'signup');
+  document.getElementById('signupNameField').style.display = mode === 'signup' ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+  document.getElementById('authError').textContent = '';
+}
+
+async function submitAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const displayName = document.getElementById('authDisplayName').value.trim();
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (authMode === 'signup' && !displayName) { errEl.textContent = 'Please enter a display name.'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  errEl.textContent = '';
+
+  try {
+    if (!window._fb) throw new Error('Firebase not loaded yet — please wait a moment and try again.');
+    if (authMode === 'login') {
+      await window._fb.signIn(email, password);
+    } else {
+      await window._fb.signUp(email, password, displayName);
+    }
+    // onUserSignedIn will fire automatically via onAuthStateChanged
+  } catch(e) {
+    errEl.textContent = friendlyAuthError(e.code || e.message);
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+  }
+}
+
+async function signInGoogle() {
+  document.getElementById('authError').textContent = '';
+  try {
+    if (!window._fb) throw new Error('Firebase not loaded yet.');
+    await window._fb.signInGoogle();
+  } catch(e) {
+    document.getElementById('authError').textContent = friendlyAuthError(e.code || e.message);
+  }
+}
+
+async function doSignOut() {
+  if (!window._fb) return;
+  await window._fb.signOut();
+  // onUserSignedOut fires automatically
+}
+
+function friendlyAuthError(code) {
+  const map = {
+    'auth/user-not-found': 'No account found with that email.',
+    'auth/wrong-password': 'Incorrect password.',
+    'auth/email-already-in-use': 'That email is already registered — try signing in.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/weak-password': 'Password must be at least 6 characters.',
+    'auth/too-many-requests': 'Too many attempts — please try again later.',
+    'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+    'auth/invalid-credential': 'Incorrect email or password.',
+  };
+  return map[code] || 'Something went wrong. Please try again.';
+}
+
+// Allow Enter key on auth inputs
+['authEmail','authPassword','authDisplayName'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
+});
+
+// ── Override saveScore to use Firestore ──
+async function saveScoreToCloud(name, pendingScoreData) {
+  if (!window._fb || !window._currentUser) return;
+  const entry = {
+    name,
+    uid: window._currentUser.uid,
+    ...pendingScoreData,
+    date: Date.now()
+  };
+  try {
+    await window._fb.addScore(entry);
+  } catch(e) {
+    console.error('Failed to save score:', e);
+  }
+}
+
+// ── Override renderLeaderboard to use Firestore ──
+async function renderLeaderboard() {
+  const listEl = document.getElementById('lbList');
+  listEl.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">⏳</div>Loading scores...</div>';
+
+  try {
+    if (!window._fb) throw new Error('Firebase not ready');
+    const lb = await window._fb.getLeaderboard(lbActiveFilter);
+
+    // Rebuild filter buttons from data
+    const allEntries = await window._fb.getLeaderboard('all');
+    const filterEl = document.getElementById('lbFilter');
+    const usedCats = ['all', ...new Set(allEntries.map(e => e.category).filter(Boolean))];
+    filterEl.innerHTML = '';
+    usedCats.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn' + (cat === lbActiveFilter ? ' active' : '');
+      btn.textContent = cat === 'all' ? '🌐 All' : (allQuestions[cat] ? allQuestions[cat].icon + ' ' + allQuestions[cat].label : cat);
+      btn.addEventListener('click', () => { lbActiveFilter = cat; renderLeaderboard(); });
+      filterEl.appendChild(btn);
+    });
+
+    if (!lb.length) {
+      listEl.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">🎯</div>No scores yet — be the first!</div>';
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    const topCls = ['top1','top2','top3'];
+    listEl.innerHTML = '';
+    lb.forEach((e, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row ' + (topCls[i] || '');
+      row.style.animationDelay = (i * 0.04) + 's';
+      const pct = Math.round((e.score / e.total) * 100);
+      const diff = e.difficulty || 'medium';
+      const catIcon = allQuestions[e.category] ? allQuestions[e.category].icon : '❓';
+      const isMe = window._currentUser && e.uid === window._currentUser.uid;
+      row.innerHTML = `
+        <div class="lb-rank">${medals[i] || '#'+(i+1)}</div>
+        <div class="lb-name">${escHtml(e.name)}${isMe ? ' <span style="font-size:9px;color:var(--accent2)">(you)</span>' : ''}</div>
+        <div class="lb-cat">${catIcon}</div>
+        <div class="lb-diff-badge ${diff}">${diff}</div>
+        <div class="lb-score-wrap">
+          <div class="lb-score-num">${e.score}/${e.total}</div>
+          <div class="lb-score-pct">${pct}%</div>
+        </div>`;
+      listEl.appendChild(row);
+    });
+  } catch(e) {
+    listEl.innerHTML = '<div class="lb-empty"><div class="lb-empty-icon">⚠️</div>Could not load scores.<br><small style="color:var(--muted)">Check your connection.</small></div>';
+  }
+}
+
+async function clearLeaderboard() {
+  if (!confirm('Clear ALL leaderboard scores for everyone? This cannot be undone.')) return;
+  try {
+    await window._fb.clearLeaderboard();
+    renderLeaderboard();
+  } catch(e) {
+    alert('Could not clear leaderboard: ' + e.message);
+  }
+}
+
+// ── Sync XP & achievements to Firestore after each game ──
+async function syncProfileToCloud() {
+  if (!window._fb || !window._currentUser) return;
+  const d = getPlayerData();
+  try {
+    await window._fb.updateUserDoc(window._currentUser.uid, {
+      xp: d.xp,
+      level: d.level,
+      achievements: d.achievements,
+      catsPlayed: d.catsPlayed || []
+    });
+  } catch(e) {
+    console.error('Profile sync failed:', e);
+  }
+}
 </script>
 </body>
 </html>
