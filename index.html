@@ -1075,6 +1075,8 @@ const TF_QUESTIONS = {
   ],
 };
 
+const UNSPLASH_KEY = 'viXr69LM5_w4Hg5kmXqOt1PGHUjJ_2OVXM21WLhzT6E';
+
 // Image questions — organised by category, then by difficulty
 // Each question: { search, q, a, correct }
 // 'search' is the Unsplash query term — Unsplash returns a RANDOM photo
@@ -1572,10 +1574,12 @@ async function startQuiz() {
   if (isAiMode) { generateAIQuestions(); return; }
 
   if (isImageMode) {
+    questions = []; // clear any previous live questions
     beginQuiz(shuffle(getImagePool(selectedCategory, selectedDiff)).slice(0, 10));
     return;
   }
 
+  showFetchOverlay();
   if (isTrueFalse) {
     // Try live T/F from OpenTDB (type=boolean)
     const live = await fetchLiveQuestions(selectedCategory, selectedDiff, 10, true);
