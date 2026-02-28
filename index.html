@@ -2277,7 +2277,9 @@ function selectTFAnswer(chosen, correct) {
   }
   const tfCorrectText = correct ? 'True' : 'False';
   showExplanation(isCorrect, q.q, tfCorrectText);
-}(selected, correct) {
+}
+
+function selectAnswer(selected, correct) {
   const elapsed = DIFF_CONFIG[selectedDiff].time - timeLeft;
   clearInterval(timer);
   const btns = document.querySelectorAll('.answer-btn');
